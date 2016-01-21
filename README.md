@@ -39,3 +39,11 @@ Current Model
 -------------
 Although much research has been done regarding the use of WebKit, etc. Selenium
 allowed for a unique and functional solution. The current package uses Selenium.
+
+
+Installation/Use
+----------------
+Using hackerrank-scraper for the first time is easy:  
+1. `pip install -r requirements.txt`  
+2. Fill config.json  
+3. python hr.py
