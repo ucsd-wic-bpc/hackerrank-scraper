@@ -34,3 +34,8 @@ The following research has been done to accomplish these tasks:
 
 [We may want to use Python WebKit](https://impythonist.wordpress.com/2015/01/06/ultimate-guide-for-scraping-javascript-rendered-web-pages/)  
 [Here is another WebKit example](https://webscraping.com/blog/Scraping-JavaScript-webpages-with-webkit/)
+
+Current Model
+-------------
+Although much research has been done regarding the use of WebKit, etc. Selenium
+allowed for a unique and functional solution. The current package uses Selenium.
