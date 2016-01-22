@@ -15,7 +15,7 @@ class Competitor:
         self.completedCount = completedCount
 
     def __str__(self):
-        return '{} {} {}'.format(self.position, self.username, 
+        return '{0:<5} {1:<25} {2:<5}'.format(self.position, self.username, 
                 self.completedCount)
 
     def __repr__(self):

@@ -1,5 +1,6 @@
 from scraper import Scraper
 
 scr = Scraper()
-for competitorList in scr.scrape():
-    print(competitorList)
+for competitorListChunk in scr.scrape():
+    for competitor in competitorListChunk:
+        print(competitor)
