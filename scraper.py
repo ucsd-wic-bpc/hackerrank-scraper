@@ -14,10 +14,12 @@ class Competitor:
         self.username = username
         self.completedCount = completedCount
 
-    @classmethod
-    def get_competitor_list(cls, scraper):
-        scraper.scrape()
-        return cls.competitorList
+    def __str__(self):
+        return '{} {} {}'.format(self.position, self.username, 
+                self.completedCount)
+
+    def __repr__(self):
+        return self.__str__()
 
 class Scraper:
     def __init__(self):
@@ -26,6 +28,7 @@ class Scraper:
 
     def print_clean_usernames_from_page(self, leadersTableElement):
         userListBoxes = leadersTableElement.find_elements_by_class_name("leaderboard-list-view")
+        competitorList = []
         for listbox in userListBoxes:
             row = listbox.find_element_by_class_name("row ")
             number = row.find_elements_by_css_selector(".span-flex-1.acm-leaderboard-cell")[0]
@@ -33,12 +36,15 @@ class Scraper:
             completedCell = row.find_elements_by_css_selector(".span-flex-1.acm-leaderboard-cell")[1]
             competitorToAdd = Competitor(number.text, nameCell.text, completedCell.text)
             Competitor.competitorList.append(competitorToAdd)
+            competitorList.append(competitorToAdd)
+
+        return competitorList
 
         
     def load_leaderboard_pages(self, leaderboardURL):
         self.driver.implicitly_wait(30)
-        pageNumber = 1
         pageSource = ""
+        pageNumber = 1
         while not "Sorry, we require a few more submissions" in pageSource:
             #print("Loading leaderboard section {}".format(pageNumber))
             self.driver.get('{}/{}'.format(leaderboardURL, pageNumber))
@@ -55,7 +61,7 @@ class Scraper:
             done = False
             while not done:
                 try:
-                    self.print_clean_usernames_from_page(leaderboardElement)
+                    yield self.print_clean_usernames_from_page(leaderboardElement)
                     done = True
                 except Exception:
                     continue
@@ -86,4 +92,5 @@ class Scraper:
 
         if not self.loggedin:
             self.login(configDict['username'], configDict['password'])
-        self.load_leaderboard_pages(configDict['leaderboard_url'])
+        for list in self.load_leaderboard_pages(configDict['leaderboard_url']):
+            yield list
