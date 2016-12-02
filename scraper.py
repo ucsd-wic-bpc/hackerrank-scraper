@@ -1,6 +1,5 @@
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -28,6 +27,7 @@ HACKERRANK_LEADERBOARD_ROW_POSITION_CSS_SELECTOR = '.span-flex-1.acm-leaderboard
 HACKERRANK_LEADERBOARD_ROW_USERNAME_CSS_SELECTOR = '.span-flex-2.acm-leaderboard-cell'
 HACKERRANK_LEADERBOARD_ROW_COMPLETED_CSS_SELECTOR = '.span-flex-1.acm-leaderboard-cell'
 
+
 class Competitor:
     def __init__(self, position, username, completedCount):
         self.position = position
@@ -35,8 +35,8 @@ class Competitor:
         self.completedCount = completedCount
 
     def __str__(self):
-        return '{0:<5} {1:<25} {2:<5}'.format(self.position, self.username, 
-                self.completedCount)
+        return '{0:<5} {1:<25} {2:<5}'.format(self.position, self.username,
+                                              self.completedCount)
 
     def __repr__(self):
         return self.__str__()
@@ -75,13 +75,12 @@ class Scraper:
             logger.debug('Loaded competitor {}'.format(competitor))
             yield competitor
 
-        
     def get_competitors_from_leaderboard(self, leaderboardURL):
         logger.info('Loading leaderboard from url {}'.format(leaderboardURL))
         self.driver.implicitly_wait(30)
         pageSource = ""
         pageNumber = 1
-        while not "Sorry, we require a few more submissions" in pageSource:
+        while "Sorry, we require a few more submissions" not in pageSource:
             logger.debug('Loading page {}'.format(pageNumber))
             self.driver.get('{}/{}'.format(leaderboardURL, pageNumber))
             pageSource = self.driver.page_source
@@ -141,7 +140,7 @@ class Scraper:
 
         passwordField.send_keys(Keys.RETURN)
         logger.debug('Waiting for after-login page')
-        WebDriverWait(self.driver, 100).until (
+        WebDriverWait(self.driver, 100).until(
             EC.presence_of_element_located(
                 (By.CLASS_NAME, HACKERRANK_FEED_CLASS_NAME)
             )
