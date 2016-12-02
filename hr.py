@@ -1,5 +1,8 @@
 from scraper import Scraper
 import json
+import logging
+
+logging.basicConfig(level=getattr(logging, 'INFO'))
 
 CONFIG_LEADERBOARD_URL_KEY = 'leaderboard_url'
 CONFIG_USERNAME_KEY = 'username'

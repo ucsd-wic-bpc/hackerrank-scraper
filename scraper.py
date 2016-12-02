@@ -8,7 +8,6 @@ from selenium.webdriver.support import expected_conditions as EC
 
 import logging
 
-logging.basicConfig(level=getattr(logging, 'INFO'))
 logger = logging.getLogger('hackerrank_scraper.scraper')
 
 # The URL used to login
