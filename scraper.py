@@ -6,6 +6,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import logging
+
+logging.basicConfig(level=getattr(logging, 'INFO'))
+logger = logging.getLogger('hackerrank_scraper.scraper')
+
 # The URL used to login
 HACKERRANK_LOGIN_URL = 'https://hackerrank.com/login'
 
@@ -14,6 +19,15 @@ HACKERRANK_LOGIN_URL = 'https://hackerrank.com/login'
 HACKERRANK_USERNAME_ELMNT = 'login'
 HACKERRANK_PASSWORD_ELMNT = 'password'
 HACKERRANK_FEED_CLASS_NAME = 'track-master'
+
+# The element names of the leaderboard fields
+HACKERRANK_LEADERBOARD_LIST_CLASS_NAME = 'leaderboard-list-view'
+
+# The elements corresponding to individual fields in the leaderboard
+HACKERRANK_LEADERBOARD_ROW_CLASS_NAME = 'row '
+HACKERRANK_LEADERBOARD_ROW_POSITION_CSS_SELECTOR = '.span-flex-1.acm-leaderboard-cell'
+HACKERRANK_LEADERBOARD_ROW_USERNAME_CSS_SELECTOR = '.span-flex-2.acm-leaderboard-cell'
+HACKERRANK_LEADERBOARD_ROW_COMPLETED_CSS_SELECTOR = '.span-flex-1.acm-leaderboard-cell'
 
 class Competitor:
     def __init__(self, position, username, completedCount):
@@ -28,6 +42,7 @@ class Competitor:
     def __repr__(self):
         return self.__str__()
 
+
 class Scraper:
     def __init__(self, hackerrank_username, hackerrank_password,
                  hackerrank_leaderboard_url, driver_factory=webdriver.PhantomJS):
@@ -37,37 +52,58 @@ class Scraper:
         self.hackerrank_leaderboard_url = hackerrank_leaderboard_url
         self.loggedin = False
 
-    def print_clean_usernames_from_page(self, leadersTableElement):
-        userListBoxes = leadersTableElement.find_elements_by_class_name("leaderboard-list-view")
+    def _parse_leaderboard_row(self, row):
+        position = row.find_elements_by_css_selector(HACKERRANK_LEADERBOARD_ROW_POSITION_CSS_SELECTOR)[0]
+        username = row.find_elements_by_css_selector(HACKERRANK_LEADERBOARD_ROW_USERNAME_CSS_SELECTOR)[0]
+        problems = row.find_elements_by_css_selector(HACKERRANK_LEADERBOARD_ROW_COMPLETED_CSS_SELECTOR)[1]
+
+        return position.text, username.text, problems.text
+
+    def get_competitors_from_leaders_table(self, leadersTableElement):
+        userListBoxes = leadersTableElement.find_elements_by_class_name(
+            HACKERRANK_LEADERBOARD_LIST_CLASS_NAME
+        )
+
         for listbox in userListBoxes:
-            row = listbox.find_element_by_class_name("row ")
-            number = row.find_elements_by_css_selector(".span-flex-1.acm-leaderboard-cell")[0]
-            nameCell = row.find_elements_by_css_selector(".span-flex-2.acm-leaderboard-cell")[0]
-            completedCell = row.find_elements_by_css_selector(".span-flex-1.acm-leaderboard-cell")[1]
-            competitorToAdd = Competitor(number.text, nameCell.text, completedCell.text)
-            print("Found competitor {}".format(competitorToAdd))
-            yield competitorToAdd
+            row = listbox.find_element_by_class_name(HACKERRANK_LEADERBOARD_ROW_CLASS_NAME)
+            position, username, problems_completed = self._parse_leaderboard_row(row)
+
+            problems_completed = (
+                0 if problems_completed == '-' else int(problems_completed)
+            )
+
+            competitor = Competitor(position, username, problems_completed)
+            logger.debug('Loaded competitor {}'.format(competitor))
+            yield competitor
 
         
-    def load_leaderboard_pages(self, leaderboardURL):
+    def get_competitors_from_leaderboard(self, leaderboardURL):
+        logger.info('Loading leaderboard from url {}'.format(leaderboardURL))
         self.driver.implicitly_wait(30)
         pageSource = ""
         pageNumber = 1
         while not "Sorry, we require a few more submissions" in pageSource:
-            print("Loading page {}".format(pageNumber))
+            logger.debug('Loading page {}'.format(pageNumber))
             self.driver.get('{}/{}'.format(leaderboardURL, pageNumber))
             pageSource = self.driver.page_source
+
             try:
-                WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "leaderboard-list-view"))
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located(
+                        (By.CLASS_NAME, HACKERRANK_LEADERBOARD_LIST_CLASS_NAME)
+                    )
                 )
             except TimeoutException:
+                logger.info('Leaderboard details not found -- Done loading')
                 return
-            print("Loaded!.. getting leaders")
+
+            logger.debug('Leaderboard details loaded -- loading competitors')
             leaderboardElement = self.driver.find_element_by_id("leaders")
             pageSource = self.driver.page_source
-            for competitor in self.print_clean_usernames_from_page(leaderboardElement):
+            for competitor in self.get_competitors_from_leaders_table(leaderboardElement):
                 yield competitor
+
+            logger.debug('Page {} loaded.'.format(pageNumber))
             pageNumber += 1
 
     def _login(self, username, password):
@@ -79,43 +115,52 @@ class Scraper:
         This does not do username/password validation. Ensure that the username
         and password are correct before calling.
         """
-        print("Logging in...")
+        logger.info('Beginning login process for username:password {}:{}'
+                    .format(username, password))
         self.driver.get(HACKERRANK_LOGIN_URL)
+
+        logger.debug('Waiting for login page to load')
         WebDriverWait(self.driver, 100).until(
             EC.presence_of_element_located(
                 (By.NAME, HACKERRANK_USERNAME_ELMNT)
             )
         )
+
+        logger.debug('Finding login elements (username/password fields)')
         usernameField = self.driver.find_element_by_css_selector(
             'form#legacy-login input[id="login"]'
         )
         passwordField = self.driver.find_element_by_css_selector(
             'form#legacy-login input[id="password"]'
         )
+
         usernameField.send_keys(username)
-        print("filled in username")
+        logger.debug('Filled in username')
+
         passwordField.send_keys(password)
-        print("filled in password")
+        logger.debug('Filled in password')
+
         passwordField.send_keys(Keys.RETURN)
+        logger.debug('Waiting for after-login page')
         WebDriverWait(self.driver, 100).until (
             EC.presence_of_element_located(
                 (By.CLASS_NAME, HACKERRANK_FEED_CLASS_NAME)
             )
         )
-        print("DONE!")
+
+        logger.info('Login succesful')
 
     def login(self):
         self._login(self.hackerrank_username, self.hackerrank_password)
         self.loggedin = True
 
     def _scrape(self, leaderboard_url):
-        print("scraping...")
-        for list in self.load_leaderboard_pages(leaderboard_url):
-            yield list
+        for competitor in self.get_competitors_from_leaderboard(leaderboard_url):
+            yield competitor
 
     def scrape(self):
         if not self.loggedin:
             raise ValueError('Must call login() before scraping')
 
-        for list in self._scrape(self.hackerrank_leaderboard_url):
-            yield list
+        for competitor in self._scrape(self.hackerrank_leaderboard_url):
+            yield competitor
