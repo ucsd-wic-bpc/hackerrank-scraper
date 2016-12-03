@@ -156,9 +156,12 @@ class Scraper:
         for competitor in self.get_competitors_from_leaderboard(leaderboard_url):
             yield competitor
 
-    def scrape(self):
+    def scrape(self, auto_login=False):
         if not self.loggedin:
-            raise ValueError('Must call login() before scraping')
+            if auto_login:
+                self.login()
+            else:
+                raise ValueError('Must call login() before scraping')
 
         for competitor in self._scrape(self.hackerrank_leaderboard_url):
             yield competitor
