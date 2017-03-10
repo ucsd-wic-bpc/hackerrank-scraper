@@ -16,10 +16,11 @@ HACKERRANK_LOGIN_URL = 'https://hackerrank.com/login'
 # hackerrank feed that recognizes a succesful login
 HACKERRANK_USERNAME_ELMNT = 'login'
 HACKERRANK_PASSWORD_ELMNT = 'password'
-HACKERRANK_FEED_CLASS_NAME = 'track-master'
+HACKERRANK_FEED_CSS_SELECTOR = 'div.fw.border-bottom.inline-block.psB.pjT'
 
 # The element names of the leaderboard fields
 HACKERRANK_LEADERBOARD_LIST_CLASS_NAME = 'leaderboard-list-view'
+
 
 # The elements corresponding to individual fields in the leaderboard
 HACKERRANK_LEADERBOARD_ROW_CLASS_NAME = 'row '
@@ -142,7 +143,7 @@ class Scraper:
         logger.debug('Waiting for after-login page')
         WebDriverWait(self.driver, 100).until(
             EC.presence_of_element_located(
-                (By.CLASS_NAME, HACKERRANK_FEED_CLASS_NAME)
+                (By.CSS_SELECTOR, HACKERRANK_FEED_CSS_SELECTOR)
             )
         )
 
