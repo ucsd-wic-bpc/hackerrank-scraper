@@ -68,6 +68,9 @@ class Scraper:
             row = listbox.find_element_by_class_name(HACKERRANK_LEADERBOARD_ROW_CLASS_NAME)
             position, username, problems_completed = self._parse_leaderboard_row(row)
 
+            if not username:
+                continue
+
             problems_completed = (
                 0 if problems_completed == '-' else int(problems_completed)
             )
@@ -102,7 +105,7 @@ class Scraper:
             for competitor in self.get_competitors_from_leaders_table(leaderboardElement):
                 yield competitor
 
-            logger.debug('Page {} loaded.'.format(pageNumber))
+            logger.info('Page {} loaded.'.format(pageNumber))
             pageNumber += 1
 
     def _login(self, username, password):
