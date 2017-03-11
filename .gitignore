@@ -1,3 +1,6 @@
 __pycache__/
 venv-win32/
 venv/
+*.pyc
+*.log
+*.sw*
